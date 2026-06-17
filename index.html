@@ -388,7 +388,10 @@ let cloudInitialized = false;
     <div class="page" id="page-rencana">
       <div class="st">Rencana Kerja Pekan Ini</div>
       <div class="card" style="padding:12px 16px">
-        <div class="flex ac gap8 jb"><div><div class="ct" style="font-size:12px">Periode Pekan Berjalan</div><div class="flex ac gap8 mt6"><div class="fg" style="margin:0;flex:1"><input type="date" id="pekan-start" onchange="updatePeriode()"></div><span class="xs txh">s/d</span><div class="fg" style="margin:0;flex:1"><input type="date" id="pekan-end" onchange="updatePeriode()"></div></div></div><div id="pekan-badge-wrap"></div></div>
+        <div class="flex ac gap8 jb">
+          <div><div class="ct" style="font-size:12px">Periode Pekan Berjalan</div><div class="flex ac gap8 mt6"><div class="fg" style="margin:0;flex:1"><input type="date" id="pekan-start" onchange="updatePeriode()"></div><span class="xs txh">s/d</span><div class="fg" style="margin:0;flex:1"><input type="date" id="pekan-end" onchange="updatePeriode()"></div></div></div>
+          <div class="flex gap8 ac"><div id="pekan-badge-wrap"></div><button class="btn bts" style="background:var(--g50);color:var(--g800);border-color:var(--g100)" onclick="downloadRCExcel()"><i class="fa-solid fa-file-excel"></i> Download Excel</button></div>
+        </div>
       </div>
       <div class="g2">
         <div class="card"><div class="chl"><div class="ct"><i class="fa-solid fa-circle" style="color:var(--t400);font-size:8px;margin-right:5px"></i>Bidang 1 - SDM</div><button class="btn bts btP" onclick="openRM('b1')"><i class="fa-solid fa-plus"></i> Tambah</button></div><div id="rcb1"><div style="color:var(--txh);font-size:12px;text-align:center;padding:14px 0">Belum ada rencana Bidang 1</div></div></div>
@@ -803,7 +806,7 @@ let cloudInitialized = false;
   <div class="modal">
     <div class="mtit"><span id="mrtt">Tambah Rencana</span><button class="mcls" onclick="CM('mrc')"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="fg"><label>Program Kerja Utama</label><select id="mr-pu" onchange="buildMrTu()"><option value="">&#8212; Tidak terkait proker &#8212;</option></select></div>
-    <div class="fg"><label>Program Turunan</label><select id="mr-tu" onchange="if(typeof buildMrAk === 'function') buildMrAk()"><option value="">&#8212; Pilih &#8212;</option></select></div>
+    <div class="fg"><label>Program Turunan</label><select id="mr-tu" onchange="chgMrTu()"><option value="">&#8212; Pilih &#8212;</option></select><input type="text" id="mr-tu-new" placeholder="Ketik program turunan baru..." style="display:none;margin-top:5px;"></div>
     <div class="fg"><label>Aktivitas Pendukung</label><input type="text" id="mr-ak" list="mr-ak-list" placeholder="Pilih atau ketik aktivitas manual..."><datalist id="mr-ak-list"></datalist></div>
     <div class="fg"><label>Judul Rencana <span style="color:var(--r400)">*</span></label><input type="text" id="mr-jd" placeholder="Judul kegiatan pekan ini..."></div>
     <div class="fg"><label>Penanggung Jawab</label><input type="text" id="mr-pj" placeholder="Nama PJ..."></div>
@@ -1346,7 +1349,8 @@ function setDefaultPekan(){const now=new Date(),day=now.getDay(),mon=new Date(no
 // RENCANA PEKAN
 // ================================================================
 function buildMrPu(){const s=document.getElementById('mr-pu');s.innerHTML='<option value="">- Tidak terkait proker -</option>';PD.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent='[B1] '+p.nama;s.appendChild(o);});PD2.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent='[B2] '+p.nama;s.appendChild(o);});}
-function buildMrTu(){const pid=document.getElementById('mr-pu').value,s=document.getElementById('mr-tu');s.innerHTML='<option value="">- Pilih -</option>';const p=[...PD,...PD2].find(x=>x.id===pid);if(p)p.turunan.forEach(t=>{addTuOption(s,t);});}
+function buildMrTu(){const pid=document.getElementById('mr-pu').value,s=document.getElementById('mr-tu');s.innerHTML='<option value="">- Pilih -</option>';const p=[...PD,...PD2].find(x=>x.id===pid);if(p){p.turunan.forEach(t=>{addTuOption(s,t);});const onew=document.createElement('option');onew.value='new';onew.style.color='var(--t600)';onew.style.fontWeight='600';onew.textContent='+ Tambah Baru';s.appendChild(onew);}chgMrTu();}
+function chgMrTu(){const val=document.getElementById('mr-tu').value;const inNew=document.getElementById('mr-tu-new');if(inNew)inNew.style.display=(val==='new')?'block':'none';if(typeof buildMrAk==='function')buildMrAk();}
 function buildMrAk(){
   const pid=document.getElementById('mr-pu').value, tid=document.getElementById('mr-tu').value, s=document.getElementById('mr-ak-list');
   if(!s) return;
@@ -1407,8 +1411,17 @@ function saveRencana(){
   const bid=document.getElementById('mr-bid').value;
   const jd=document.getElementById('mr-jd').value.trim();
   if(!jd){toast('Judul tidak boleh kosong',false);return;}
-  const puid=document.getElementById('mr-pu').value,tuid=document.getElementById('mr-tu').value;
-  const p=[...PD,...PD2].find(x=>x.id===puid),t=p?p.turunan.find(x=>x.id===tuid):null;
+  const puid=document.getElementById('mr-pu').value;
+  let tuid=document.getElementById('mr-tu').value;
+  const p=[...PD,...PD2].find(x=>x.id===puid);
+  if(tuid==='new'){
+    const newName=document.getElementById('mr-tu-new').value.trim();
+    if(newName&&p){
+      tuid='tu_'+Date.now();
+      p.turunan.push({id:tuid,nama:newName,status:'todo',timeline:'',aktivitas:[]});
+    }else{tuid='';}
+  }
+  const t=p?p.turunan.find(x=>x.id===tuid):null;
   const newSt=document.getElementById('mr-ss').value;
   const tgl=document.getElementById('mr-en').value||document.getElementById('mr-st').value||new Date().toLocaleDateString('id-ID');
   const item={id:rSeq++,judul:jd,pj:document.getElementById('mr-pj').value,start:document.getElementById('mr-st').value,end:document.getElementById('mr-en').value,desc:document.getElementById('mr-ds').value,status:newSt,aktivitasPendukung:document.getElementById('mr-ak').value,tasks:[...RBuf],bid,puid,tuid,pnama:p?p.nama:'',tnama:t?t.nama:'',created:new Date().toLocaleDateString('id-ID')};
@@ -1752,6 +1765,21 @@ function downloadAHExcel(){
   a.download='Laporan_Aktivitas_FOZ_'+now.getFullYear()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+'.csv';
   a.click();URL.revokeObjectURL(url);
   toast('Laporan diunduh ('+items.length+' aktivitas)');
+}
+function downloadRCExcel(){
+  const rows=[['No','Bidang','Judul Rencana','Program Utama','Program Turunan','Aktivitas Pendukung','Status','Mulai','Selesai','Penanggung Jawab','Deskripsi']];
+  const stM={done:'Selesai',ongoing:'Berjalan',todo:'Belum'};
+  let idx=1;
+  [...RD.b1,...RD.b2].forEach(r=>{
+    rows.push([idx++, r.bid==='b1'?'Bidang 1 - SDM':'Bidang 2 - Kelembagaan', r.judul||'', r.pnama||'', r.tnama||'', r.aktivitasPendukung||'', stM[r.status]||r.status||'', r.start||'', r.end||'', r.pj||'', r.desc||'']);
+  });
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  const now=new Date();a.href=url;
+  a.download='Laporan_Rencana_Pekan_FOZ_'+now.getFullYear()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+'.csv';
+  a.click();URL.revokeObjectURL(url);
+  toast('Laporan Rencana diunduh ('+(RD.b1.length+RD.b2.length)+' item)');
 }
 
 // ================================================================
