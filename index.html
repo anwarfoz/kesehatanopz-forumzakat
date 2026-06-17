@@ -243,8 +243,7 @@ let cloudInitialized = false;
     <div class="ni" onclick="showPage('pengurus-b2')"><i class="fa-solid fa-users"></i> Pengurus</div>
     <div class="ngl" style="margin-top:6px">Admin</div>
     <div class="ni adm" onclick="openAdminPage()"><i class="fa-solid fa-shield-halved"></i> Super Admin <span class="nb nbr" id="nba">&#128274;</span></div>
-    <div class="ni" id="nav-ppt-b1" style="display:none;color:var(--b400)" onclick="exportPPT('b1')"><i class="fa-solid fa-file-powerpoint"></i> Export Laporan PPT B1</div>
-    <div class="ni" id="nav-ppt-b2" style="display:none;color:var(--b400)" onclick="exportPPT('b2')"><i class="fa-solid fa-file-powerpoint"></i> Export Laporan PPT B2</div>
+    <div class="ni" id="nav-excel-all" style="display:none;color:var(--t400)" onclick="exportExcelAll()"><i class="fa-solid fa-file-excel"></i> Export Laporan Excel</div>
   </nav>
   <div class="sb-foot"><span class="xs txh">v2.1 (Sync) - 2026</span><button class="tbtn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Mode</button></div>
 </aside>
@@ -1096,8 +1095,8 @@ function showPage(id){
 // ADMIN
 // ================================================================
 function openAdminPage(){if(isAdm){showPage('admin');return}document.getElementById('apass').value='';document.getElementById('lerr').style.display='none';document.getElementById('alog').style.display='flex'}
-function doLogin(){if(document.getElementById('apass').value===APW){isAdm=true;document.getElementById('alog').style.display='none';document.getElementById('abar').classList.add('on');document.getElementById('admbadge').style.display='flex';document.getElementById('nba').textContent='\u2713';['betl','bechk','nav-rencana','nav-aktivitas','nav-input','btn-tambah-proker','nav-ppt-b1','nav-ppt-b2'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='';});const pm=document.getElementById('pm-text');if(pm)pm.style.display='none';showPage('admin');toast('Mode Super Admin aktif!');}else document.getElementById('lerr').style.display='block'}
-function logoutAdmin(){isAdm=false;document.getElementById('abar').classList.remove('on');document.getElementById('admbadge').style.display='none';['betl','bechk','nav-rencana','nav-aktivitas','nav-input','btn-tambah-proker','nav-ppt-b1','nav-ppt-b2'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});const pm=document.getElementById('pm-text');if(pm)pm.style.display='';document.getElementById('nba').textContent='\uD83D\uDD12';showPage('beranda');toast('Logout berhasil');}
+function doLogin(){if(document.getElementById('apass').value===APW){isAdm=true;document.getElementById('alog').style.display='none';document.getElementById('abar').classList.add('on');document.getElementById('admbadge').style.display='flex';document.getElementById('nba').textContent='\u2713';['betl','bechk','nav-rencana','nav-aktivitas','nav-input','btn-tambah-proker','nav-excel-all'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='';});const pm=document.getElementById('pm-text');if(pm)pm.style.display='none';showPage('admin');toast('Mode Super Admin aktif!');}else document.getElementById('lerr').style.display='block'}
+function logoutAdmin(){isAdm=false;document.getElementById('abar').classList.remove('on');document.getElementById('admbadge').style.display='none';['betl','bechk','nav-rencana','nav-aktivitas','nav-input','btn-tambah-proker','nav-excel-all'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});const pm=document.getElementById('pm-text');if(pm)pm.style.display='';document.getElementById('nba').textContent='\uD83D\uDD12';showPage('beranda');toast('Logout berhasil');}
 function openAdminModal(sec){if(!isAdm){toast('Perlu login admin',false);return}document.getElementById('mat').textContent=sec==='timeline'?'Edit Action Plan':'Edit Checklist';document.getElementById('mab').innerHTML=sec==='timeline'?buildTLF():buildCHKF();document.getElementById('mam').classList.add('on');}
 function buildTLF(){return'<div id="atll2">'+TL.map(t=>`<div class="arow" id="atr-${t.id}"><input class="ei" style="flex:2" value="${esc(t.title)}" id="att-${t.id}"><input class="ei" style="width:100px" value="${esc(t.date)}" id="atd-${t.id}"><select class="ei" style="width:80px" id="atp-${t.id}"><option value="high" ${t.prio==='high'?'selected':''}>Urgent</option><option value="med" ${t.prio==='med'?'selected':''}>Sedang</option><option value="low" ${t.prio==='low'?'selected':''}>Rendah</option></select><button class="btn bts btD" onclick="delTL(${t.id})"><i class="fa-solid fa-trash"></i></button></div>`).join('')+'</div><div class="flex gap6 mt8"><input class="ei" id="annt" style="flex:2" placeholder="Judul baru..."><input class="ei" id="annd" style="width:100px" placeholder="Tanggal..."><select class="ei" id="annp" style="width:80px"><option value="high">Urgent</option><option value="med" selected>Sedang</option><option value="low">Rendah</option></select><button class="btn bts btP" onclick="addTLI()"><i class="fa-solid fa-plus"></i></button></div><div class="flex gap8 mt12" style="justify-content:flex-end"><button class="btn" onclick="CM(\'mam\')">Batal</button><button class="btn btA" onclick="saveTL()"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>';}
 function buildCHKF(){return'<div id="achkl2">'+CHK.map(c=>`<div class="arow" id="acr-${c.id}"><input class="ei" style="flex:2" value="${esc(c.text)}" id="act-${c.id}"><select class="ei" style="width:80px" id="acp-${c.id}"><option value="high" ${c.prio==='high'?'selected':''}>Urgent</option><option value="med" ${c.prio==='med'?'selected':''}>Sedang</option><option value="low" ${c.prio==='low'?'selected':''}>Rendah</option></select><button class="btn bts btD" onclick="delCHKa(${c.id})"><i class="fa-solid fa-trash"></i></button></div>`).join('')+'</div><div class="flex gap6 mt8"><input class="ei" id="acnt" style="flex:2" placeholder="Tugas baru..."><select class="ei" id="acnp" style="width:80px"><option value="high">Urgent</option><option value="med" selected>Sedang</option><option value="low">Rendah</option></select><button class="btn bts btP" onclick="addCHKI()"><i class="fa-solid fa-plus"></i></button></div><div class="flex gap8 mt12" style="justify-content:flex-end"><button class="btn" onclick="CM(\'mam\')">Batal</button><button class="btn btA" onclick="saveCHK()"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>';}
@@ -2960,6 +2959,38 @@ function dlCSV(rows,fname){
 function st2txt(s){
   const m={done:'Selesai',partial:'Sebagian',todo:'Belum',planned:'Direncanakan',ongoing:'Berjalan'};
   return m[s]||'-';
+}
+
+function exportExcelAll() {
+  const rows = [['Bidang', 'Nama Program Utama', 'Status Proker', 'Nama Program Turunan', 'Status Turunan', 'Timeline']];
+  const stM = {done:'Selesai', partial:'Sebagian', ongoing:'Berjalan', planned:'Direncanakan', todo:'Belum'};
+  const addData = (bid, pdArray) => {
+    pdArray.forEach(p => {
+      let pStatus = 'todo';
+      if (p.turunan && p.turunan.length > 0) {
+        if (p.turunan.every(t => t.status === 'done')) pStatus = 'done';
+        else if (p.turunan.some(t => t.status === 'done' || t.status === 'ongoing' || t.status === 'partial')) pStatus = 'ongoing';
+      }
+      if (!p.turunan || p.turunan.length === 0) {
+        rows.push([bid, p.nama, stM[pStatus]||pStatus, '-', '-', '-']);
+      } else {
+        p.turunan.forEach(t => {
+          rows.push([bid, p.nama, stM[pStatus]||pStatus, t.nama, stM[t.status]||t.status, t.timeline||'-']);
+        });
+      }
+    });
+  };
+  addData('Bidang 1 - SDM', PD);
+  addData('Bidang 2 - Kelembagaan', PD2);
+  const csv=rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  const now=new Date();
+  a.download='Laporan_Seluruh_Program_Kerja_FOZ_'+now.getFullYear()+(now.getMonth()+1).toString().padStart(2,'0')+now.getDate().toString().padStart(2,'0')+'.csv';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  toast('Laporan Excel berhasil diunduh!');
 }
 
 function exportPPT(bidang) {
