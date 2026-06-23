@@ -6,6 +6,18 @@
 <title>Dashboard Penilaian Kesehatan OPZ</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.0/highmaps.min.js"></script>
+<script>
+  if(typeof Highcharts === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/highmaps.min.js"><\/script>');
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@highcharts/map-collection@2.1.0/countries/id/id-all.js"></script>
+<script>
+  if(typeof Highcharts === 'undefined' || !Highcharts.maps || !Highcharts.maps['countries/id/id-all']) {
+    document.write('<script src="https://unpkg.com/@highcharts/map-collection@2.1.0/countries/id/id-all.js"><\/script>');
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" onerror="loadHtml2pdfFallback()"></script>
 <script>
 function loadHtml2pdfFallback(){
@@ -429,7 +441,20 @@ body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans
 
 <!-- ===== WILAYAH & DAERAH ===== -->
 <div class="view" id="view-wilayah">
-  <div class="section-title">Rekap Wilayah & Daerah</div>
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 15px;">
+    <div class="section-title" style="margin-bottom:0;">Rekap Wilayah & Daerah</div>
+    <button id="btnCetakWilayah" onclick="printWilayah()" style="background:linear-gradient(135deg,#1a5c2a,#2e7d46);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(26,92,42,.25);">🖨️ Cetak / Simpan PDF</button>
+  </div>
+  
+  <!-- MAP INDONESIA CONTAINER -->
+  <div class="card" style="margin-bottom:22px; padding:15px;">
+    <div class="card-title" style="margin-bottom:15px;"><span>🗺️</span> Peta Sebaran Rata-rata Nilai per Provinsi</div>
+    <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-start;">
+      <div id="indonesiaMapContainer" style="position:relative; height:450px; flex:1; min-width:400px; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; background:#f0f9ff;"></div>
+      <div id="provinceDetailContainer" style="display:none; width:280px; flex-shrink:0; padding:15px; border-radius:12px; border:1px solid #e2e8f0; background:#f8fafc; max-height:450px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.03);"></div>
+    </div>
+  </div>
+
   <div class="card" style="margin-bottom:22px">
     <div class="card-title"><span>📍</span> Rekap Nilai Setiap Wilayah (Provinsi)</div>
     <div id="provinsiTableContainer"></div>
@@ -734,45 +759,45 @@ const KET_NASIONAL=[
 ];
 
 const BUILTIN_DATA=[
-  {nama:"Bakrie Amanah",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.2833,kategori:"Sangat Baik",resp:5,pilars:{A:4.65,B:4.4,C:4.3,D:4.75,E:4.3,F:4.25,G:4.28,H:3.7429,I:5.0,J:3.16},source:"builtin"},
-  {nama:"Baitulmaal Munzalan Indonesia",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.9989,kategori:"Baik",resp:5,pilars:{A:4.7,B:3.4,C:3.9,D:4.65,E:3.65,F:3.7,G:3.52,H:4.2286,I:5.0,J:3.24},source:"builtin"},
-  {nama:"Sahabat Yatim Indonesia",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.0964,kategori:"Baik",resp:5,pilars:{A:4.85,B:4.35,C:3.9,D:4.2,E:4.15,F:3.9,G:3.88,H:3.7143,I:4.3,J:3.72},source:"builtin"},
-  {nama:"LAZGIS",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.1437,kategori:"Baik",resp:4,pilars:{A:4.75,B:3.75,C:3.625,D:4.75,E:4.25,F:3.8125,G:3.25,H:3.75,I:5.0,J:4.5},source:"builtin"},
-  {nama:"LAZNAS YDSF",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.9289,kategori:"Baik",resp:4,pilars:{A:4.25,B:3.75,C:3.625,D:4.6875,E:3.75,F:3.8125,G:3.55,H:3.4643,I:5.0,J:3.4},source:"builtin"},
-  {nama:"LAZ Abulyatama Indonesia",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.9077,kategori:"Baik",resp:4,pilars:{A:4.4375,B:3.625,C:3.6875,D:4.75,E:3.5625,F:4.0,G:3.35,H:3.2143,I:5.0,J:3.45},source:"builtin"},
-  {nama:"LAZNAS Mizan Amanah",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.2666,kategori:"Sangat Baik",resp:4,pilars:{A:4.625,B:3.9375,C:3.625,D:4.875,E:4.25,F:4.375,G:3.75,H:4.4286,I:5.0,J:3.8},source:"builtin"},
-  {nama:"ZIS Indosat",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.1082,kategori:"Baik",resp:4,pilars:{A:4.6875,B:4.25,C:4.1875,D:4.5625,E:4.25,F:3.8125,G:3.7,H:3.1071,I:4.625,J:3.9},source:"builtin"},
-  {nama:"Dompet Dhuafa",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.7798,kategori:"Sangat Baik",resp:4,pilars:{A:4.875,B:4.375,C:4.8125,D:5.0,E:4.5,F:5.0,G:4.9,H:4.7857,I:5.0,J:4.55},source:"builtin"},
-  {nama:"Griya Yatim dan Dhuafa (GYD)",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.3264,kategori:"Sangat Baik",resp:4,pilars:{A:4.875,B:4.75,C:3.875,D:4.875,E:4.0,F:4.625,G:3.85,H:3.9643,I:5.0,J:3.45},source:"builtin"},
-  {nama:"BSI Maslahat",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.7496,kategori:"Sangat Baik",resp:4,pilars:{A:5.0,B:4.8125,C:4.625,D:4.9375,E:4.75,F:4.75,G:4.7,H:4.5714,I:5.0,J:4.35},source:"builtin"},
-  {nama:"LAZISNUR",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.3163,kategori:"Cukup Baik",resp:4,pilars:{A:3.6875,B:2.625,C:3.6875,D:3.5625,E:3.0625,F:3.5625,G:3.05,H:2.75,I:3.875,J:3.3},source:"builtin"},
-  {nama:"LAZNAS Dewan Da’wah Islamiyah Indonesia",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.7282,kategori:"Sangat Baik",resp:4,pilars:{A:4.9375,B:4.5625,C:4.75,D:4.9375,E:4.5,F:4.9375,G:4.35,H:4.6071,I:5.0,J:4.7},source:"builtin"},
-  {nama:"LAZ DASI NTB",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.5957,kategori:"Baik",resp:3,pilars:{A:4.25,B:3.0833,C:3.5833,D:4.5833,E:3.5833,F:3.0833,G:3.2667,H:2.8571,I:4.3333,J:3.3333},source:"builtin"},
-  {nama:"LAZ Al Bunyan",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.7736,kategori:"Baik",resp:3,pilars:{A:4.5,B:4.1667,C:3.8333,D:3.9167,E:3.6667,F:3.6667,G:3.2667,H:3.2857,I:3.8333,J:3.6},source:"builtin"},
-  {nama:"LAZ Ummul Quro",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.0848,kategori:"Baik",resp:3,pilars:{A:4.5,B:3.75,C:4.4167,D:4.5833,E:3.8333,F:4.25,G:3.6667,H:3.7143,I:5.0,J:3.1333},source:"builtin"},
-  {nama:"MAI Foundation",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.5005,kategori:"Sangat Baik",resp:3,pilars:{A:4.8333,B:3.75,C:4.4167,D:4.75,E:4.75,F:4.6667,G:4.8,H:4.2381,I:5.0,J:3.8},source:"builtin"},
-  {nama:"Inisiatif Zakat Indonesia (IZI)",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.6467,kategori:"Sangat Baik",resp:3,pilars:{A:4.9167,B:4.5,C:4.5833,D:4.75,E:4.6667,F:4.5833,G:4.6,H:5.0,I:5.0,J:3.8667},source:"builtin"},
-  {nama:"YBM BRILiaN",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.6933,kategori:"Sangat Baik",resp:3,pilars:{A:5.0,B:4.5833,C:4.4167,D:4.6667,E:5.0,F:5.0,G:4.8,H:4.6667,I:5.0,J:3.8},source:"builtin"},
-  {nama:"Indonesia Berbagi",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.5976,kategori:"Baik",resp:3,pilars:{A:4.0833,B:3.75,C:3.0833,D:3.9167,E:3.25,F:3.5833,G:3.0,H:3.1429,I:4.5,J:3.6667},source:"builtin"},
-  {nama:"LAZ Assyifa Peduli",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.8469,kategori:"Baik",resp:3,pilars:{A:4.5833,B:3.5833,C:4.0,D:4.0,E:3.8333,F:3.75,G:3.2667,H:3.2857,I:4.1667,J:4.0},source:"builtin"},
-  {nama:"Sukoharjo Peduli",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.2107,kategori:"Cukup Baik",resp:3,pilars:{A:4.75,B:3.25,C:3.9167,D:3.5,E:4.0833,F:3.0833,G:3.2,H:2.8571,I:1.0,J:2.4667},source:"builtin"},
-  {nama:"LAZ Ibnu Sina",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.5688,kategori:"Baik",resp:3,pilars:{A:4.75,B:3.75,C:3.75,D:4.3333,E:3.75,F:4.25,G:3.2,H:3.9048,I:1.0,J:3.0},source:"builtin"},
-  {nama:"LAZNAS LMI",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.3954,kategori:"Sangat Baik",resp:4,pilars:{A:4.6875,B:4.3125,C:4.1875,D:4.5625,E:4.375,F:4.25,G:4.1,H:4.4286,I:5.0,J:4.05},source:"builtin"},
-  {nama:"Sinergi Foundation",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.0554,kategori:"Baik",resp:2,pilars:{A:4.25,B:3.875,C:3.875,D:4.375,E:4.0,F:4.25,G:3.7,H:3.9286,I:5.0,J:3.3},source:"builtin"},
-  {nama:"LAZIS Jateng",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.8768,kategori:"Baik",resp:2,pilars:{A:4.5,B:3.25,C:3.875,D:4.0,E:3.375,F:4.125,G:3.0,H:4.1429,I:5.0,J:3.5},source:"builtin"},
-  {nama:"Yayasan Hadji Kalla",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.1161,kategori:"Baik",resp:2,pilars:{A:4.75,B:4.125,C:4.0,D:4.875,E:4.875,F:4.25,G:3.9,H:3.7857,I:3.5,J:3.1},source:"builtin"},
-  {nama:"LAZ AZKA Al Baitul Amien Jember",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.5361,kategori:"Baik",resp:2,pilars:{A:4.0,B:3.25,C:3.75,D:4.375,E:3.625,F:3.625,G:3.7,H:2.7857,I:2.75,J:3.5},source:"builtin"},
-  {nama:"Nusantara Palestina Center",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.8568,kategori:"Baik",resp:2,pilars:{A:4.125,B:3.75,C:3.625,D:4.625,E:3.375,F:3.125,G:4.2,H:3.6429,I:4.5,J:3.6},source:"builtin"},
-  {nama:"LAZ As-Salam Timika",skala:"Kab/Kota",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.4636,kategori:"Baik",resp:2,pilars:{A:4.0,B:3.5,C:3.625,D:3.875,E:3.875,F:3.125,G:3.6,H:3.7857,I:2.25,J:3.0},source:"builtin"},
-  {nama:"LAZ Harapan Dhuafa",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.665,kategori:"Sangat Baik",resp:2,pilars:{A:4.5,B:4.125,C:4.625,D:5.0,E:4.75,F:4.75,G:4.7,H:5.0,I:5.0,J:4.2},source:"builtin"},
-  {nama:"LAZIS Al Haromain",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.245,kategori:"Sangat Baik",resp:1,pilars:{A:4.75,B:3.75,C:3.25,D:4.75,E:3.75,F:4.0,G:4.4,H:5.0,I:5.0,J:3.8},source:"builtin"},
-  {nama:"DSM Bali",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.16,kategori:"Baik",resp:1,pilars:{A:5.0,B:4.5,C:3.75,D:4.5,E:3.75,F:4.5,G:3.0,H:4.0,I:5.0,J:3.6},source:"builtin"},
-  {nama:"LAZ Zakat Sukses",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.65,kategori:"Sangat Baik",resp:1,pilars:{A:5.0,B:4.5,C:4.5,D:4.75,E:4.75,F:5.0,G:4.6,H:5.0,I:5.0,J:3.4},source:"builtin"},
-  {nama:"Insan Madani Jambi",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.8529,kategori:"Baik",resp:1,pilars:{A:5.0,B:4.75,C:3.5,D:4.25,E:3.5,F:4.0,G:2.8,H:2.4286,I:4.5,J:3.8},source:"builtin"},
-  {nama:"LAZDAI Lampung",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.7593,kategori:"Baik",resp:1,pilars:{A:4.5,B:3.75,C:3.75,D:3.75,E:3.75,F:4.75,G:3.2,H:3.1429,I:4.0,J:3.0},source:"builtin"},
-  {nama:"LAZ Energi Kebaikan Rokan",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.8336,kategori:"Baik",resp:1,pilars:{A:4.75,B:3.5,C:4.0,D:4.75,E:3.5,F:3.75,G:3.6,H:2.2857,I:5.0,J:3.2},source:"builtin"},
-  {nama:"Taman Zakat Indonesia",skala:"Provinsi",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:4.325,kategori:"Sangat Baik",resp:1,pilars:{A:5.0,B:4.5,C:4.25,D:4.75,E:4.5,F:4.25,G:4.4,H:3.0,I:5.0,J:3.6},source:"builtin"},
-  {nama:"ZIS Yayasan Annur Insan Pembangkitan (YANIP)",skala:"Nasional",provinsi:"Belum Ditentukan",kabKota:"Belum Ditentukan",nilai:3.295,kategori:"Cukup Baik",resp:1,pilars:{A:4.0,B:3.5,C:3.5,D:4.0,E:3.0,F:2.75,G:2.0,H:3.0,I:4.0,J:3.2},source:"builtin"},
+  {nama:"Bakrie Amanah",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:4.2833,kategori:"Sangat Baik",resp:5,pilars:{A:4.65,B:4.4,C:4.3,D:4.75,E:4.3,F:4.25,G:4.28,H:3.7429,I:5.0,J:3.16},source:"builtin"},
+  {nama:"Baitulmaal Munzalan Indonesia",skala:"Nasional",provinsi:"Kalimantan Barat",kabKota:"Kalimantan Barat",nilai:3.9989,kategori:"Baik",resp:5,pilars:{A:4.7,B:3.4,C:3.9,D:4.65,E:3.65,F:3.7,G:3.52,H:4.2286,I:5.0,J:3.24},source:"builtin"},
+  {nama:"Sahabat Yatim Indonesia",skala:"Nasional",provinsi:"Banten",kabKota:"Tangerang Selatan",nilai:4.0964,kategori:"Baik",resp:5,pilars:{A:4.85,B:4.35,C:3.9,D:4.2,E:4.15,F:3.9,G:3.88,H:3.7143,I:4.3,J:3.72},source:"builtin"},
+  {nama:"LAZGIS",skala:"Provinsi",provinsi:"Jawa Barat",kabKota:"Bekasi",nilai:4.1437,kategori:"Baik",resp:4,pilars:{A:4.75,B:3.75,C:3.625,D:4.75,E:4.25,F:3.8125,G:3.25,H:3.75,I:5.0,J:4.5},source:"builtin"},
+  {nama:"LAZNAS YDSF",skala:"Nasional",provinsi:"Jawa Timur",kabKota:"Surabaya",nilai:3.9289,kategori:"Baik",resp:4,pilars:{A:4.25,B:3.75,C:3.625,D:4.6875,E:3.75,F:3.8125,G:3.55,H:3.4643,I:5.0,J:3.4},source:"builtin"},
+  {nama:"LAZ Abulyatama Indonesia",skala:"Nasional",provinsi:"Jawa Barat",kabKota:"Bandung",nilai:3.9077,kategori:"Baik",resp:4,pilars:{A:4.4375,B:3.625,C:3.6875,D:4.75,E:3.5625,F:4.0,G:3.35,H:3.2143,I:5.0,J:3.45},source:"builtin"},
+  {nama:"LAZNAS Mizan Amanah",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:4.2666,kategori:"Sangat Baik",resp:4,pilars:{A:4.625,B:3.9375,C:3.625,D:4.875,E:4.25,F:4.375,G:3.75,H:4.4286,I:5.0,J:3.8},source:"builtin"},
+  {nama:"ZIS Indosat",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Timur",nilai:4.1082,kategori:"Baik",resp:4,pilars:{A:4.6875,B:4.25,C:4.1875,D:4.5625,E:4.25,F:3.8125,G:3.7,H:3.1071,I:4.625,J:3.9},source:"builtin"},
+  {nama:"Dompet Dhuafa",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:4.7798,kategori:"Sangat Baik",resp:4,pilars:{A:4.875,B:4.375,C:4.8125,D:5.0,E:4.5,F:5.0,G:4.9,H:4.7857,I:5.0,J:4.55},source:"builtin"},
+  {nama:"Griya Yatim dan Dhuafa (GYD)",skala:"Nasional",provinsi:"Banten",kabKota:"Tangerang Selatan",nilai:4.3264,kategori:"Sangat Baik",resp:4,pilars:{A:4.875,B:4.75,C:3.875,D:4.875,E:4.0,F:4.625,G:3.85,H:3.9643,I:5.0,J:3.45},source:"builtin"},
+  {nama:"BSI Maslahat",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:4.7496,kategori:"Sangat Baik",resp:4,pilars:{A:5.0,B:4.8125,C:4.625,D:4.9375,E:4.75,F:4.75,G:4.7,H:4.5714,I:5.0,J:4.35},source:"builtin"},
+  {nama:"LAZISNUR",skala:"Kab/Kota",provinsi:"Jawa Barat",kabKota:"Bogor",nilai:3.3163,kategori:"Cukup Baik",resp:4,pilars:{A:3.6875,B:2.625,C:3.6875,D:3.5625,E:3.0625,F:3.5625,G:3.05,H:2.75,I:3.875,J:3.3},source:"builtin"},
+  {nama:"LAZNAS Dewan Da’wah Islamiyah Indonesia",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Pusat",nilai:4.7282,kategori:"Sangat Baik",resp:4,pilars:{A:4.9375,B:4.5625,C:4.75,D:4.9375,E:4.5,F:4.9375,G:4.35,H:4.6071,I:5.0,J:4.7},source:"builtin"},
+  {nama:"LAZ DASI NTB",skala:"Provinsi",provinsi:"NTB",kabKota:"Mataram",nilai:3.5957,kategori:"Baik",resp:3,pilars:{A:4.25,B:3.0833,C:3.5833,D:4.5833,E:3.5833,F:3.0833,G:3.2667,H:2.8571,I:4.3333,J:3.3333},source:"builtin"},
+  {nama:"LAZ Al Bunyan",skala:"Provinsi",provinsi:"Jawa Barat",kabKota:"Bogor",nilai:3.7736,kategori:"Baik",resp:3,pilars:{A:4.5,B:4.1667,C:3.8333,D:3.9167,E:3.6667,F:3.6667,G:3.2667,H:3.2857,I:3.8333,J:3.6},source:"builtin"},
+  {nama:"LAZ Ummul Quro",skala:"Provinsi",provinsi:"Jawa Timur",kabKota:"Jombang",nilai:4.0848,kategori:"Baik",resp:3,pilars:{A:4.5,B:3.75,C:4.4167,D:4.5833,E:3.8333,F:4.25,G:3.6667,H:3.7143,I:5.0,J:3.1333},source:"builtin"},
+  {nama:"MAI Foundation",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Pusat",nilai:4.5005,kategori:"Sangat Baik",resp:3,pilars:{A:4.8333,B:3.75,C:4.4167,D:4.75,E:4.75,F:4.6667,G:4.8,H:4.2381,I:5.0,J:3.8},source:"builtin"},
+  {nama:"Inisiatif Zakat Indonesia (IZI)",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Timur",nilai:4.6467,kategori:"Sangat Baik",resp:3,pilars:{A:4.9167,B:4.5,C:4.5833,D:4.75,E:4.6667,F:4.5833,G:4.6,H:5.0,I:5.0,J:3.8667},source:"builtin"},
+  {nama:"YBM BRILiaN",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Pusat",nilai:4.6933,kategori:"Sangat Baik",resp:3,pilars:{A:5.0,B:4.5833,C:4.4167,D:4.6667,E:5.0,F:5.0,G:4.8,H:4.6667,I:5.0,J:3.8},source:"builtin"},
+  {nama:"Indonesia Berbagi",skala:"Kab/Kota",provinsi:"Jawa Barat",kabKota:"Bandung",nilai:3.5976,kategori:"Baik",resp:3,pilars:{A:4.0833,B:3.75,C:3.0833,D:3.9167,E:3.25,F:3.5833,G:3.0,H:3.1429,I:4.5,J:3.6667},source:"builtin"},
+  {nama:"LAZ Assyifa Peduli",skala:"Kab/Kota",provinsi:"Jawa Barat",kabKota:"Subang",nilai:3.8469,kategori:"Baik",resp:3,pilars:{A:4.5833,B:3.5833,C:4.0,D:4.0,E:3.8333,F:3.75,G:3.2667,H:3.2857,I:4.1667,J:4.0},source:"builtin"},
+  {nama:"Sukoharjo Peduli",skala:"Kab/Kota",provinsi:"Jawa Tengah",kabKota:"Sukoharjo",nilai:3.2107,kategori:"Cukup Baik",resp:3,pilars:{A:4.75,B:3.25,C:3.9167,D:3.5,E:4.0833,F:3.0833,G:3.2,H:2.8571,I:1.0,J:2.4667},source:"builtin"},
+  {nama:"LAZ Ibnu Sina",skala:"Kab/Kota",provinsi:"DKI Jakarta",kabKota:"Jakarta Timur",nilai:3.5688,kategori:"Baik",resp:3,pilars:{A:4.75,B:3.75,C:3.75,D:4.3333,E:3.75,F:4.25,G:3.2,H:3.9048,I:1.0,J:3.0},source:"builtin"},
+  {nama:"LAZNAS LMI",skala:"Nasional",provinsi:"Jawa Timur",kabKota:"Surabaya",nilai:4.3954,kategori:"Sangat Baik",resp:4,pilars:{A:4.6875,B:4.3125,C:4.1875,D:4.5625,E:4.375,F:4.25,G:4.1,H:4.4286,I:5.0,J:4.05},source:"builtin"},
+  {nama:"Sinergi Foundation",skala:"Provinsi",provinsi:"Jawa Barat",kabKota:"Bandung",nilai:4.0554,kategori:"Baik",resp:2,pilars:{A:4.25,B:3.875,C:3.875,D:4.375,E:4.0,F:4.25,G:3.7,H:3.9286,I:5.0,J:3.3},source:"builtin"},
+  {nama:"LAZIS Jateng",skala:"Provinsi",provinsi:"Jawa Tengah",kabKota:"Semarang",nilai:3.8768,kategori:"Baik",resp:2,pilars:{A:4.5,B:3.25,C:3.875,D:4.0,E:3.375,F:4.125,G:3.0,H:4.1429,I:5.0,J:3.5},source:"builtin"},
+  {nama:"Yayasan Hadji Kalla",skala:"Nasional",provinsi:"Sulawesi Selatan",kabKota:"Makasar",nilai:4.1161,kategori:"Baik",resp:2,pilars:{A:4.75,B:4.125,C:4.0,D:4.875,E:4.875,F:4.25,G:3.9,H:3.7857,I:3.5,J:3.1},source:"builtin"},
+  {nama:"LAZ AZKA Al Baitul Amien Jember",skala:"Kab/Kota",provinsi:"Jawa Timur",kabKota:"Jember",nilai:3.5361,kategori:"Baik",resp:2,pilars:{A:4.0,B:3.25,C:3.75,D:4.375,E:3.625,F:3.625,G:3.7,H:2.7857,I:2.75,J:3.5},source:"builtin"},
+  {nama:"Nusantara Palestina Center",skala:"Provinsi",provinsi:"DKI Jakarta",kabKota:"Jakarta Timur",nilai:3.8568,kategori:"Baik",resp:2,pilars:{A:4.125,B:3.75,C:3.625,D:4.625,E:3.375,F:3.125,G:4.2,H:3.6429,I:4.5,J:3.6},source:"builtin"},
+  {nama:"LAZ As-Salam Timika",skala:"Kab/Kota",provinsi:"Papua",kabKota:"Papua",nilai:3.4636,kategori:"Baik",resp:2,pilars:{A:4.0,B:3.5,C:3.625,D:3.875,E:3.875,F:3.125,G:3.6,H:3.7857,I:2.25,J:3.0},source:"builtin"},
+  {nama:"LAZ Harapan Dhuafa",skala:"Provinsi",provinsi:"Banten",kabKota:"Serang",nilai:4.665,kategori:"Sangat Baik",resp:2,pilars:{A:4.5,B:4.125,C:4.625,D:5.0,E:4.75,F:4.75,G:4.7,H:5.0,I:5.0,J:4.2},source:"builtin"},
+  {nama:"LAZIS Al Haromain",skala:"Provinsi",provinsi:"Jawa Timur",kabKota:"Surabaya",nilai:4.245,kategori:"Sangat Baik",resp:1,pilars:{A:4.75,B:3.75,C:3.25,D:4.75,E:3.75,F:4.0,G:4.4,H:5.0,I:5.0,J:3.8},source:"builtin"},
+  {nama:"DSM Bali",skala:"Provinsi",provinsi:"Bali",kabKota:"Denpasar",nilai:4.16,kategori:"Baik",resp:1,pilars:{A:5.0,B:4.5,C:3.75,D:4.5,E:3.75,F:4.5,G:3.0,H:4.0,I:5.0,J:3.6},source:"builtin"},
+  {nama:"LAZ Zakat Sukses",skala:"Provinsi",provinsi:"Jawa Barat",kabKota:"Depok",nilai:4.65,kategori:"Sangat Baik",resp:1,pilars:{A:5.0,B:4.5,C:4.5,D:4.75,E:4.75,F:5.0,G:4.6,H:5.0,I:5.0,J:3.4},source:"builtin"},
+  {nama:"Insan Madani Jambi",skala:"Provinsi",provinsi:"Jambi",kabKota:"Jambi",nilai:3.8529,kategori:"Baik",resp:1,pilars:{A:5.0,B:4.75,C:3.5,D:4.25,E:3.5,F:4.0,G:2.8,H:2.4286,I:4.5,J:3.8},source:"builtin"},
+  {nama:"LAZDAI Lampung",skala:"Provinsi",provinsi:"Lampung",kabKota:"Bandar Lampung",nilai:3.7593,kategori:"Baik",resp:1,pilars:{A:4.5,B:3.75,C:3.75,D:3.75,E:3.75,F:4.75,G:3.2,H:3.1429,I:4.0,J:3.0},source:"builtin"},
+  {nama:"LAZ Energi Kebaikan Rokan",skala:"Provinsi",provinsi:"Riau",kabKota:"Pekanbaru",nilai:3.8336,kategori:"Baik",resp:1,pilars:{A:4.75,B:3.5,C:4.0,D:4.75,E:3.5,F:3.75,G:3.6,H:2.2857,I:5.0,J:3.2},source:"builtin"},
+  {nama:"Taman Zakat Indonesia",skala:"Provinsi",provinsi:"Jawa Timur",kabKota:"Sidoarjo",nilai:4.325,kategori:"Sangat Baik",resp:1,pilars:{A:5.0,B:4.5,C:4.25,D:4.75,E:4.5,F:4.25,G:4.4,H:3.0,I:5.0,J:3.6},source:"builtin"},
+  {nama:"ZIS Yayasan Annur Insan Pembangkitan (YANIP)",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:3.295,kategori:"Cukup Baik",resp:1,pilars:{A:4.0,B:3.5,C:3.5,D:4.0,E:3.0,F:2.75,G:2.0,H:3.0,I:4.0,J:3.2},source:"builtin"},
   {nama:"Baitul Maal Hidayatullah (BMH)",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:4.3529,kategori:"Sangat Baik",resp:1,pilars:{A:4.75,B:4.0,C:4.5,D:5.0,E:4.0,F:4.25,G:4.2,H:4.4286,I:5.0,J:3.4},source:"builtin"},
   {nama:"YAKESMA",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Selatan",nilai:4.57,kategori:"Sangat Baik",resp:1,pilars:{A:5.0,B:4.25,C:4.75,D:4.75,E:4.0,F:4.75,G:4.2,H:5.0,I:5.0,J:4.0},source:"builtin"},
   {nama:"Rumah Zakat",skala:"Nasional",provinsi:"Jawa Barat",kabKota:"Bandung",nilai:4.8557,kategori:"Sangat Baik",resp:1,pilars:{A:5.0,B:5.0,C:4.75,D:5.0,E:4.75,F:5.0,G:4.8,H:4.8571,I:5.0,J:4.4},source:"builtin"},
@@ -801,7 +826,7 @@ const BUILTIN_DATA=[
   {nama:"LAZIS Agnia Care",skala:"Nasional",provinsi:"DKI Jakarta",kabKota:"Jakarta Pusat",nilai:4.2921,kategori:"Sangat Baik",resp:1,pilars:{A:4.5,B:5.0,C:4.0,D:4.75,E:4.75,F:4.75,G:4.0,H:3.5714,I:4.0,J:3.6},source:"builtin"},
   {nama:"LAZ RIZKI",skala:"Kab/Kota",provinsi:"Jawa Timur",kabKota:"Jember",nilai:3.4114,kategori:"Baik",resp:1,pilars:{A:4.0,B:3.0,C:3.5,D:3.0,E:3.25,F:3.25,G:3.0,H:3.7143,I:4.0,J:3.4},source:"builtin"},
   {nama:"LAZ Rumah Peduli Umat",skala:"Kab/Kota",provinsi:"Jawa Barat",kabKota:"Bandung Barat",nilai:3.5214,kategori:"Baik",resp:1,pilars:{A:3.5,B:3.75,C:3.0,D:4.75,E:3.5,F:4.0,G:2.8,H:1.7143,I:5.0,J:3.2},source:"builtin"},
-  {nama:"LAZ SEMBADA",skala:"Kab/Kota",provinsi:"DIY",kabKota:"Yogyakarta",nilai:3.2979,kategori:"Cukup Baik",resp:1,pilars:{A:4.75,B:2.75,C:4.25,D:3.0,E:4.0,F:4.0,G:3.6,H:2.4286,I:1.0,J:3.2},source:"builtin"},
+  {nama:"LAZ SEMBADA",skala:"Kab/Kota",provinsi:"DIY",kabKota:"Kota Yogyakarta",nilai:3.2979,kategori:"Cukup Baik",resp:1,pilars:{A:4.75,B:2.75,C:4.25,D:3.0,E:4.0,F:4.0,G:3.6,H:2.4286,I:1.0,J:3.2},source:"builtin"},
   {nama:"Pelopor Kepedulian",skala:"Kab/Kota",provinsi:"Banten",kabKota:"Tangerang",nilai:2.62,kategori:"Cukup Baik",resp:1,pilars:{A:4.25,B:3.0,C:3.25,D:2.75,E:2.75,F:3.0,G:2.0,H:1.0,I:1.0,J:3.2},source:"builtin"}
 ];;
 
@@ -880,6 +905,12 @@ function switchView(v,btn){
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
   if(btn)btn.classList.add('active');
+  
+  if(v === 'wilayah') {
+    if(typeof renderIndonesiaMap === 'function') {
+      setTimeout(renderIndonesiaMap, 50);
+    }
+  }
 }
 
 /* Klik summary card → scroll ke anchor di view */
@@ -1100,15 +1131,215 @@ function renderOverview(){
   })();
 
   /* ── TABEL REKAP WILAYAH & DAERAH ── */
-  (function buildWilayahTables(){
-    function getCellColor(val){
-      if(val>=4.21) return 'color:#1b5e20;background:#e8f5ee;';
-      if(val>=3.41) return 'color:#0d47a1;background:#e3f2fd;';
-      if(val>=2.61) return 'color:#e65100;background:#fff3e0;';
-      return 'color:#b71c1c;background:#fdecea;';
-    }
+  function renderIndonesiaMap() {
+    const c = document.getElementById('indonesiaMapContainer');
+    if (!c) return;
     
-    function buildTable(groupKey, containerId, titlePrefix) {
+    if (!window.Highcharts) {
+      c.innerHTML = '<div style="padding:20px;text-align:center;color:#b91c1c;font-weight:600;">Gagal memuat library peta (Highcharts). Pastikan koneksi internet Anda stabil atau tidak memblokir script peta.</div>';
+      return;
+    }
+
+    if (!window.Highcharts.maps || !window.Highcharts.maps['countries/id/id-all']) {
+      c.innerHTML = '<div style="padding:20px;text-align:center;color:#888;">Mohon tunggu, memuat data peta... (Refresh jika terlalu lama)</div>';
+      return;
+    }
+
+    const groups = {};
+    activeData.forEach(o => {
+      const p = o.provinsi;
+      if (!p) return;
+      if (!groups[p]) groups[p] = { count: 0, sum: 0, pilars: {A:0,B:0,C:0,D:0,E:0,F:0,G:0,H:0,I:0,J:0} };
+      groups[p].count++;
+      groups[p].sum += o.nilai;
+      for(let k in o.pilars) groups[p].pilars[k] += o.pilars[k];
+    });
+
+    const hcKeyMap = {
+      "DKI Jakarta": "id-jk", "Jawa Barat": "id-jr", "Banten": "id-bt", "Sulawesi Selatan": "id-se",
+      "Jawa Tengah": "id-jt", "DIY": "id-yo", "Jawa Timur": "id-ji", "Kalimantan Barat": "id-kb",
+      "NTB": "id-nb", "Bali": "id-ba", "Papua": "id-pa", "Riau": "id-ri", "Sumatera Barat": "id-sb",
+      "Jambi": "id-ja", "Kepulauan Riau": "id-kr", "Kalimantan Timur": "id-ki", "Sumatera Selatan": "id-sl",
+      "Sumatera Utara": "id-su", "Aceh": "id-ac", "Lampung": "id-1024", "Bengkulu": "id-be",
+      "Bangka Belitung": "id-bb", "NTT": "id-nt", "Kalimantan Tengah": "id-kt", "Kalimantan Selatan": "id-ks",
+      "Kalimantan Utara": "id-ku", "Sulawesi Utara": "id-sw", "Sulawesi Tengah": "id-st",
+      "Sulawesi Tenggara": "id-sg", "Sulawesi Barat": "id-sr", "Gorontalo": "id-go", "Maluku": "id-ma",
+      "Maluku Utara": "id-la", "Papua Barat": "id-ib"
+    };
+
+    const mapData = [];
+    Object.keys(groups).forEach(p => {
+      const g = groups[p];
+      const avg = g.sum / g.count;
+      const hcKey = hcKeyMap[p];
+      if(hcKey) {
+        mapData.push({
+          'hc-key': hcKey,
+          value: avg,
+          name: p,
+          color: getVC(avg),
+          pilarsData: g.pilars,
+          count: g.count
+        });
+      }
+    });
+
+    try {
+      Highcharts.mapChart('indonesiaMapContainer', {
+        chart: { 
+          map: 'countries/id/id-all', 
+          backgroundColor: 'transparent',
+          events: {
+            redraw: function() {
+              const overlay = document.getElementById('mapCalloutOverlay');
+              if (overlay) overlay.innerHTML = '';
+            }
+          }
+        },
+        title: { text: '' },
+        credits: { enabled: false },
+        legend: { enabled: false },
+        mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
+        tooltip: { enabled: false },
+        series: [{
+          data: mapData,
+          mapData: Highcharts.maps['countries/id/id-all'],
+          joinBy: 'hc-key',
+          name: 'Provinsi',
+          allAreas: true,
+          nullColor: '#e2e8f0',
+          borderColor: '#ffffff',
+          borderWidth: 1,
+          states: { hover: { brightness: 0.1 } },
+          dataLabels: { enabled: false },
+          point: {
+            events: {
+              click: function() {
+                if(!this.value) return;
+                showMapDetail(this);
+              }
+            }
+          }
+        }]
+      });
+    } catch(e) {
+      console.error(e);
+      c.innerHTML = '<div style="padding:20px;text-align:center;color:red;">Terjadi kesalahan saat menggambar peta.</div>';
+    }
+  }
+
+  function showMapDetail(pt) {
+    const d = document.getElementById('provinceDetailContainer');
+    if(!d) return;
+    d.style.display = 'block';
+    
+    let html = '<div style="font-size:14px; font-weight:800; margin-bottom:14px; color:var(--text); border-bottom:1px dashed #cbd5e1; padding-bottom:10px;">' +
+               '📍 Rincian Rata-rata 10 Pilar: <span style="color:' + pt.color + '">' + pt.name + '</span> ' +
+               '<span style="font-size:11px; font-weight:600; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:10px; margin-left:6px;">' + pt.count + ' lembaga</span>' +
+               '</div>';
+    
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px 16px;">';
+    
+    const sortedPilars = pilarKeys.map(k => {
+      return { k: k, v: (pt.pilarsData ? pt.pilarsData[k] : 0) / pt.count };
+    }).sort((a, b) => b.v - a.v);
+
+    sortedPilars.forEach(item => {
+      const k = item.k;
+      const v = item.v;
+      const pct = (v/5*100).toFixed(1);
+      const c = getVC(v);
+      html += '<div style="display:flex; align-items:center; gap:10px;">' +
+              '<div style="width:150px; font-size:11.5px; font-weight:600; color:#444;">' + PILAR_KEY_MAP[k] + '</div>' +
+              '<div style="flex:1; height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden;">' +
+              '<div style="height:100%; width:' + pct + '%; background:' + c + '; border-radius:99px;"></div>' +
+              '</div>' +
+              '<div style="width:34px; font-size:11.5px; font-weight:800; color:' + c + '; text-align:right;">' + v.toFixed(2) + '</div>' +
+              '</div>';
+    });
+    
+    html += '</div>';
+    
+    d.innerHTML = html;
+    d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => { drawMapCallouts(pt); }, 100);
+  }
+
+  function drawMapCallouts(pt) {
+    const c = document.getElementById('indonesiaMapContainer');
+    if (!c) return;
+    
+    let overlay = document.getElementById('mapCalloutOverlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'mapCalloutOverlay';
+      overlay.style.position = 'absolute';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.overflow = 'hidden';
+      overlay.style.zIndex = '99';
+      c.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+    
+    const provName = pt.name;
+    const lembagaList = activeData.filter(o => o.provinsi === provName);
+    if(lembagaList.length === 0) return;
+    
+    const byCity = {};
+    lembagaList.forEach(o => {
+      let city = o.kabKota || 'Lainnya';
+      if(!byCity[city]) byCity[city] = [];
+      byCity[city].push(o);
+    });
+    const cities = Object.keys(byCity);
+    if(cities.length === 0) return;
+    
+    const chart = pt.series.chart;
+    const cx = pt.plotX + chart.plotLeft;
+    const cy = pt.plotY + chart.plotTop;
+    
+    let svgHtml = '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">';
+    let labelsHtml = '';
+    
+    // Stack vertically downwards, slightly offset to the right or left depending on map position
+    const isRightHalf = cx > (chart.plotWidth / 2);
+    const directionX = isRightHalf ? -1 : 1; 
+    
+    let startDestY = cy - ((cities.length * 40) / 2); // Center vertically around clicked point
+    if (startDestY < 20) startDestY = 20; // prevent clipping at top
+    
+    cities.forEach((city, i) => {
+      const destX = cx + (directionX * 120); // fixed distance horizontally
+      const destY = startDestY + (i * 45); // spaced vertically like stairs
+      
+      const lineCol = '#b91c1c';
+      
+      svgHtml += `<path d="M ${cx} ${cy} L ${cx + (directionX * 30)} ${destY} L ${destX} ${destY}" stroke="${lineCol}" stroke-width="1.5" fill="none" opacity="0.7"/>`;
+      svgHtml += `<circle cx="${cx}" cy="${cy}" r="4" fill="${lineCol}" />`;
+      
+      let instList = byCity[city].sort((a,b)=>b.nilai-a.nilai).map(o => `<div style="font-size:10px;font-weight:600;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">• ${o.nama} <span style="color:${getKC(o.kategori)}">(${o.nilai.toFixed(2)})</span></div>`).join('');
+      
+      let alignX = destX < cx ? 'right' : 'left';
+      let leftProp = alignX === 'left' ? `${destX + 5}px` : 'auto';
+      let rightProp = alignX === 'right' ? `calc(100% - ${destX - 5}px)` : 'auto';
+      
+      labelsHtml += `<div style="position:absolute;top:${destY}px;left:${leftProp};right:${rightProp};transform:translateY(-50%);background:rgba(255,255,255,0.95);border:1px solid ${lineCol};padding:6px 10px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.15);pointer-events:auto;min-width:120px;max-width:240px;z-index:10;backdrop-filter:blur(4px);">
+        <div style="font-size:11px;font-weight:800;color:${lineCol};margin-bottom:2px;border-bottom:1px solid #fee2e2;padding-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${city}</div>
+        ${instList}
+      </div>`;
+    });
+    
+    svgHtml += '</svg>';
+    overlay.innerHTML = svgHtml + labelsHtml;
+  }
+
+  function renderWilayah(){
+    renderIndonesiaMap();
+    function buildGrid(groupKey, containerId) {
       const c = document.getElementById(containerId);
       if(!c) return;
       
@@ -1121,44 +1352,50 @@ function renderOverview(){
         for(let p in o.pilars) groups[key].pilars[p] += o.pilars[p];
       });
       
-      let html = `<div style="overflow-x:auto;border-radius:8px;border:1px solid #e2e8f0"><table style="width:100%;border-collapse:separate;border-spacing:2px;background:#f8fafc;min-width:720px">
-        <thead>
-          <tr style="background:linear-gradient(135deg,#1e3a2e,#3a1010)">
-            <th style="padding:10px;color:#fff;font-size:11px;text-align:left">${titlePrefix}</th>
-            <th style="padding:10px;color:#fff;font-size:10px;text-align:center;">A</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">B</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">C</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">D</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">E</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">F</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">G</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">H</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">I</th><th style="padding:10px;color:#fff;font-size:10px;text-align:center;">J</th>
-            <th style="padding:10px;color:#ffd700;font-size:11px;text-align:center;">Rata-rata</th>
-          </tr>
-        </thead><tbody>`;
-      
       const sortedKeys = Object.keys(groups).sort((a,b) => {
         if(a === "Belum Ditentukan") return 1;
         if(b === "Belum Ditentukan") return -1;
         return a.localeCompare(b);
       });
       
+      if(sortedKeys.length === 0) {
+        c.innerHTML = '<div style="color:#888;padding:20px;text-align:center;">Belum ada data.</div>';
+        return;
+      }
+
+      let html = '<div class="three-col">';
+      
       sortedKeys.forEach(k => {
         const g = groups[k];
-        const avg = g.sum / g.count;
-        html += `<tr style="background:#fff">
-          <td style="padding:10px;font-size:12px;font-weight:700;color:#333;white-space:nowrap;border-left:4px solid #1b5e20;">${k}<div style="font-size:10px;font-weight:400;color:#888;">${g.count} lembaga</div></td>`;
+        const avgTotal = g.sum / g.count;
+        const totalCol = getVC(avgTotal);
         
-        ['A','B','C','D','E','F','G','H','I','J'].forEach(p => {
-          const pAvg = g.pilars[p] / g.count;
-          html += `<td style="text-align:center;padding:9px 5px;font-size:12px;font-weight:700;border-radius:3px;${getCellColor(pAvg)}">${pAvg.toFixed(2)}</td>`;
+        let pilarHtml = '';
+        const pilarAvgs = pilarKeys.map(p => ({ key: p, val: g.pilars[p] / g.count }));
+        pilarAvgs.sort((a,b) => b.val - a.val);
+
+        pilarAvgs.forEach(p => {
+          const pct = (p.val / 5) * 100;
+          const col = getVC(p.val);
+          pilarHtml += `<div class="pilar-avg-row"><div class="pilar-avg-label">${PILAR_KEY_MAP[p.key]}</div><div class="pilar-avg-bar"><div class="pilar-avg-fill" style="width:${pct}%;background:${col}"></div></div><div class="pilar-avg-val" style="color:${col}">${p.val.toFixed(2)}</div></div>`;
         });
         
-        html += `<td style="text-align:center;padding:9px 5px;font-size:12px;font-weight:800;border-radius:3px;border-left:2px solid rgba(0,0,0,.08);${getCellColor(avg)}">${avg.toFixed(2)}</td>
-        </tr>`;
+        html += `<div class="card" style="border-top:4px solid ${totalCol}; padding: 15px;">
+          <div class="card-title" style="color:${totalCol}; margin-bottom: 5px;"><span>📍</span> ${k}</div>
+          <div style="font-size:12px; color:#666; margin-bottom: 15px;">${g.count} lembaga OPZ | Nilai Rata-rata: <b style="color:${totalCol}">${avgTotal.toFixed(2)}</b></div>
+          <div style="display:flex;flex-direction:column;gap:1px;">
+            ${pilarHtml}
+          </div>
+        </div>`;
       });
       
-      html += `</tbody></table></div>`;
+      html += '</div>';
       c.innerHTML = html;
     }
     
-    buildTable('provinsi', 'provinsiTableContainer', 'Provinsi');
-    buildTable('kabKota', 'daerahTableContainer', 'Daerah (Kota/Kab)');
-  })();div>Baik (3.41–4.20)</div><div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#555"><div style="width:12px;height:12px;border-radius:2px;background:#fff3e0;border:1px solid #e65100"></div>Cukup Baik (2.61–3.40)</div><div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#555"><div style="width:12px;height:12px;border-radius:2px;background:#fdecea;border:1px solid #b71c1c"></div>Kurang Baik (≤2.60)</div></div>`;
-})();
+    buildGrid('provinsi', 'provinsiTableContainer');
+    buildGrid('kabKota', 'daerahTableContainer');
+  }
 
 
 /* ===================== RENDER RANKING ===================== */
@@ -1425,6 +1662,68 @@ function printNasional(){
   }
   
   if(btn) { btn.innerHTML = '🖨️ Cetak Rekap Nasional (PDF)'; btn.disabled = false; }
+}
+
+function printWilayah(){
+  var btn = document.getElementById('btnCetakWilayah');
+  if(btn) { btn.innerHTML = '⏳ Menyiapkan PDF...'; btn.disabled = true; }
+  
+  try {
+    var wilayahView = document.getElementById('view-wilayah').cloneNode(true);
+    var clonedBtn = wilayahView.querySelector('#btnCetakWilayah');
+    if(clonedBtn) clonedBtn.parentNode.removeChild(clonedBtn);
+    
+    var cssText = '';
+    document.querySelectorAll('style').forEach(function(s){
+      cssText += s.innerHTML;
+    });
+    
+    var now = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+    var html = '<!DOCTYPE html><html lang="id"><head>'
+      + '<meta charset="UTF-8">'
+      + '<title>Rekap Wilayah & Daerah - ' + now + '</title>'
+      + '<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">'
+      + '<style>'
+      + cssText
+      + '@media print{'
+      + '  @page{size:A4 landscape;margin:12mm 14mm;}'
+      + '  body{padding:0;}'
+      + '  .no-print{display:none!important;}'
+      + '  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+      + '}'
+      + 'body{background:#fff;padding:24px;}'
+      + '</style>'
+      + '</head><body>'
+      + '<div class="no-print" style="margin-bottom:16px;display:flex;gap:10px;align-items:center">'
+      + '<button onclick="window.print()" style="background:linear-gradient(135deg,#1a5c2a,#2e7d46);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">&#128424; Cetak / Simpan PDF</button>'
+      + '<button onclick="window.close()" style="background:#f1f5f9;color:#555;border:1px solid #ddd;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer;font-family:inherit">&#10005; Tutup</button>'
+      + '<span style="font-size:11px;color:#888">Pilih &quot;Save as PDF&quot; di dialog cetak untuk menyimpan sebagai PDF</span>'
+      + '</div>'
+      + '<div style="background:linear-gradient(135deg,#133213,#3a1010);color:#fff;padding:20px 24px;border-radius:12px;margin-bottom:24px;display:flex;align-items:center;gap:16px">'
+      + '  <div>'
+      + '    <div style="font-size:22px;font-weight:800;letter-spacing:0.5px;margin-bottom:6px;">Rekapitulasi Wilayah & Daerah Kesehatan OPZ</div>'
+      + '    <div style="font-size:13px;color:#d1fae5;font-weight:600;opacity:0.9;">Forum Zakat &mdash; GRC Survey Tahun Ini</div>'
+      + '  </div>'
+      + '</div>'
+      + wilayahView.innerHTML
+      + '<div style="margin-top:30px;padding-top:15px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:10px;color:#888">'
+      + '<span>Dashboard Penilaian Kesehatan OPZ &bull; Forum Zakat &bull; GRC Survey</span>'
+      + '<span>Dicetak: '+now+'</span></div>'
+      + '</body></html>';
+      
+    var w = window.open('','_blank','width=1000,height=920,scrollbars=yes,resizable=yes');
+    if(!w){
+      alert('Popup diblokir browser!\n\nCara mengizinkan:\n- Chrome/Edge: klik ikon popup di address bar kanan atas\n- Firefox: klik "Allow" di notifikasi');
+    } else {
+      w.document.write(html);
+      w.document.close();
+    }
+  } catch(e) {
+    console.error(e);
+    alert('Terjadi kesalahan saat menyiapkan cetak.');
+  }
+  
+  if(btn) { btn.innerHTML = '🖨️ Cetak / Simpan PDF'; btn.disabled = false; }
 }
 
 function printLembaga(rawNama){
@@ -1747,6 +2046,7 @@ function renderKlasifikasi(){
 
 function renderAll(){
   renderOverview();
+  renderWilayah();
   renderRanking();
   renderKlasifikasi();
   renderLembagaSelect();
